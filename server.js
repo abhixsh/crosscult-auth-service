@@ -9,10 +9,12 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI)
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected for Auth service'))
-    .catch(err => console.log(err));
+    .catch((err) => console.error('Error connecting to MongoDB:', err));
 
+// Define routes
 app.use('/api/users', userRoutes);
 app.use('/api/admins', adminRoutes);
 
