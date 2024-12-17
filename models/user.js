@@ -11,7 +11,9 @@ const userSchema = new mongoose.Schema({
     role: { type: String, enum: ['content_creator', 'visitor'], default: 'visitor' },
     registration_date: { type: Date, default: Date.now },
     fav_Country: { type: String },
-    preferences: { type: [String], enum: ['history', 'food'], default: [] }
+    preferences: { type: [String], enum: ['history', 'food'] },
 });
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;

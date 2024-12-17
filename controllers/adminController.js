@@ -1,133 +1,60 @@
-const bcrypt = require('bcryptjs');
 const Admin = require('../models/admin');
-const nodemailer = require('nodemailer');
-const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
-// Temporary store for OTPs. For production, use a cache like Redis.
-let adminOTPs = {};
-
-// Email transporter
-const transporter = nodemailer.createTransport({
-    service: 'Gmail', // Use your email provider
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-});
-
-// Function to send OTP
-const sendOTP = async (email) => {
-    const otp = crypto.randomInt(100000, 999999); // Generate 6-digit OTP
-    const expiresIn = Date.now() + 5 * 60 * 1000; // Valid for 5 minutes
-
-    // Save OTP temporarily
-    adminOTPs[email] = { otp, expiresIn };
-
-    // Send email with OTP
-    await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'Your Admin Login OTP',
-        text: `Your OTP is ${otp}. It is valid for 5 minutes.`,
-    });
-
-    console.log(`OTP sent to ${email}: ${otp}`);
-    return otp;
-};
-
-// Register a new admin
+// Register Admin
 exports.registerAdmin = async (req, res) => {
-    const { name, email, notification_email, password } = req.body;
+    const { name, email, password } = req.body;
     try {
+        const adminExists = await Admin.findOne({ email });
+        if (adminExists) return res.status(400).json({ message: 'Admin already exists' });
+
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newAdmin = new Admin({
-            name,
-            email,
-            notification_email,
-            password: hashedPassword,
-        });
-        const savedAdmin = await newAdmin.save();
-        res.status(201).json(savedAdmin);
+        const admin = new Admin({ name, email, password: hashedPassword });
+        await admin.save();
+
+        res.status(201).json(admin);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Error registering admin', error });
     }
 };
 
-// Login admin with OTP verification
-exports.loginAdmin = async (req, res) => {
-    const { email, password, otp } = req.body;
-
-    try {
-        const admin = await Admin.findOne({ email });
-        if (!admin) return res.status(404).json({ message: 'Admin not found' });
-
-        // Validate password
-        const isPasswordValid = await bcrypt.compare(password, admin.password);
-        if (!isPasswordValid) return res.status(400).json({ message: 'Invalid credentials' });
-
-        // OTP Validation Step
-        if (otp) {
-            const storedOTP = adminOTPs[admin.notification_email];
-            if (!storedOTP || storedOTP.otp !== parseInt(otp)) {
-                return res.status(400).json({ message: 'Invalid or expired OTP' });
-            }
-
-            if (storedOTP.expiresIn < Date.now()) {
-                delete adminOTPs[admin.notification_email];
-                return res.status(400).json({ message: 'OTP expired. Please login again.' });
-            }
-
-            // OTP verified
-            delete adminOTPs[admin.notification_email]; // Clear OTP after use
-            return res.status(200).json({ message: 'Login successful', admin });
-        }
-
-        // If OTP not provided, send OTP
-        await sendOTP(admin.notification_email);
-        res.status(200).json({ message: 'OTP sent to your notification email.' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-// CRUD for admins
+// Get All Admins
 exports.getAdmins = async (req, res) => {
     try {
         const admins = await Admin.find();
         res.status(200).json(admins);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Error fetching admins', error });
     }
 };
 
-exports.getAdminById = async (req, res) => {
+// Update Admin
+exports.updateAdmin = async (req, res) => {
+    const { adminId } = req.params;
+    const { name, email, password } = req.body;
+
     try {
-        const admin = await Admin.findById(req.params.id);
+        const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+        const updateData = hashedPassword ? { name, email, password: hashedPassword } : { name, email };
+
+        const admin = await Admin.findByIdAndUpdate(adminId, updateData, { new: true });
         if (!admin) return res.status(404).json({ message: 'Admin not found' });
+
         res.status(200).json(admin);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Error updating admin', error });
     }
 };
 
-exports.updateAdmin = async (req, res) => {
-    try {
-        const updateData = req.body;
-        if (updateData.password) {
-            updateData.password = await bcrypt.hash(updateData.password, 10);
-        }
-        const updatedAdmin = await Admin.findByIdAndUpdate(req.params.id, updateData, { new: true });
-        res.status(200).json(updatedAdmin);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
+// Delete Admin
 exports.deleteAdmin = async (req, res) => {
+    const { adminId } = req.params;
     try {
-        await Admin.findByIdAndDelete(req.params.id);
-        res.status(200).json({ message: 'Admin deleted' });
+        const admin = await Admin.findByIdAndDelete(adminId);
+        if (!admin) return res.status(404).json({ message: 'Admin not found' });
+
+        res.status(200).json({ message: 'Admin deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Error deleting admin', error });
     }
 };

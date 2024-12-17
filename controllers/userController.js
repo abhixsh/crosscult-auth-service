@@ -1,83 +1,58 @@
-const bcrypt = require('bcryptjs');
 const User = require('../models/user');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-// Register a new user
+// Register User
 exports.registerUser = async (req, res) => {
-    const { name, username, country, email, password, profile_picture, bio, fav_Country, preferences } = req.body;
+    const { name, username, country, email, password, profile_picture, bio, role, fav_Country, preferences } = req.body;
     try {
+        const userExists = await User.findOne({ email });
+        if (userExists) return res.status(400).json({ message: 'User already exists' });
+
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({
-            name,
-            username,
-            country,
-            email,
-            password: hashedPassword,
-            profile_picture,
-            bio,
-            fav_Country,
-            preferences
-        });
-        const savedUser = await newUser.save();
-        res.status(201).json(savedUser);
+        const user = new User({ name, username, country, email, password: hashedPassword, profile_picture, bio, role, fav_Country, preferences });
+        await user.save();
+
+        res.status(201).json(user);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Error registering user', error });
     }
 };
 
-// Login user
-exports.loginUser = async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: 'User not found' });
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) return res.status(400).json({ message: 'Invalid credentials' });
-
-        res.status(200).json({ message: 'Login successful', user });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-// CRUD for users
+// Get All Users
 exports.getUsers = async (req, res) => {
     try {
         const users = await User.find();
         res.status(200).json(users);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Error fetching users', error });
     }
 };
 
-exports.getUserById = async (req, res) => {
+// Update User
+exports.updateUser = async (req, res) => {
+    const { userId } = req.params;
+    const { name, username, country, email, profile_picture, bio, role, fav_Country, preferences } = req.body;
+
     try {
-        const user = await User.findById(req.params.id);
+        const user = await User.findByIdAndUpdate(userId, { name, username, country, email, profile_picture, bio, role, fav_Country, preferences }, { new: true });
         if (!user) return res.status(404).json({ message: 'User not found' });
+
         res.status(200).json(user);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Error updating user', error });
     }
 };
 
-exports.updateUser = async (req, res) => {
-    try {
-        const updateData = req.body;
-        if (updateData.password) {
-            updateData.password = await bcrypt.hash(updateData.password, 10);
-        }
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, updateData, { new: true });
-        res.status(200).json(updatedUser);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
+// Delete User
 exports.deleteUser = async (req, res) => {
+    const { userId } = req.params;
     try {
-        await User.findByIdAndDelete(req.params.id);
-        res.status(200).json({ message: 'User deleted' });
+        const user = await User.findByIdAndDelete(userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Error deleting user', error });
     }
 };
