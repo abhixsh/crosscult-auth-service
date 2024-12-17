@@ -3,6 +3,8 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
 
 dotenv.config();
 connectDB();
@@ -13,8 +15,13 @@ app.use(express.json());  // To parse incoming JSON requests
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/admins', adminRoutes);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log('API Documentation available at http://localhost:5000/api-docs');
 });
+
+
+

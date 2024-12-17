@@ -1,438 +1,300 @@
 {
-    "swagger": "2.0",
+    "openapi": "3.0.0",
     "info": {
-        "version": "1.0.0",
-        "title": "CrossCult Admin and User API",
-        "description": "API documentation for managing Admins and Users"
+      "title": "User and Admin CRUD API",
+      "description": "A Node.js API for managing Users and Admins, with CRUD operations.",
+      "version": "1.0.0",
+      "contact": {
+        "name": "Your Name",
+        "email": "youremail@example.com"
+      }
     },
-    "host": "localhost:3002",
-    "basePath": "/api",
-    "tags": [
-        {
-            "name": "Admin",
-            "description": "Operations related to admin management"
-        },
-        {
-            "name": "User",
-            "description": "Operations related to user management"
-        }
-    ],
-    "schemes": [
-        "http"
+    "servers": [
+      {
+        "url": "http://localhost:5000/api"
+      }
     ],
     "paths": {
-        "/admins/register": {
-            "post": {
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Register a new admin",
-                "description": "Allows registering a new admin account.",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Admin object",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/Admin"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Admin created successfully"
+      "/users/register": {
+        "post": {
+          "summary": "Register a User",
+          "operationId": "registerUser",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" },
+                    "username": { "type": "string" },
+                    "country": { "type": "string" },
+                    "email": { "type": "string" },
+                    "password": { "type": "string" },
+                    "profile_picture": { "type": "string" },
+                    "bio": { "type": "string" },
+                    "role": {
+                      "type": "string",
+                      "enum": ["content_creator", "visitor"]
                     },
-                    "500": {
-                        "description": "Server error"
+                    "fav_Country": { "type": "string" },
+                    "preferences": {
+                      "type": "array",
+                      "items": { "type": "string" }
                     }
+                  },
+                  "required": ["name", "username", "email", "password"]
                 }
+              }
             }
-        },
-        "/admins/login": {
-            "post": {
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Admin login",
-                "description": "Authenticate admin with email and password, along with optional OTP verification.",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Login credentials",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "email": {
-                                    "type": "string"
-                                },
-                                "password": {
-                                    "type": "string"
-                                },
-                                "otp": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Login successful"
-                    },
-                    "400": {
-                        "description": "Invalid credentials or OTP"
-                    },
-                    "404": {
-                        "description": "Admin not found"
-                    }
-                }
-            }
-        },
-        "/admins": {
-            "get": {
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Get all admins",
-                "description": "Retrieve a list of all registered admins.",
-                "responses": {
-                    "200": {
-                        "description": "List of admins"
-                    },
-                    "500": {
-                        "description": "Server error"
-                    }
-                }
-            }
-        },
-        "/admins/{id}": {
-            "get": {
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Get admin by ID",
-                "description": "Retrieve admin details by ID.",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "description": "Admin ID",
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Admin details"
-                    },
-                    "404": {
-                        "description": "Admin not found"
-                    }
-                }
+          },
+          "responses": {
+            "201": {
+              "description": "User registered successfully"
             },
-            "put": {
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Update admin by ID",
-                "description": "Modify admin details by ID.",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "description": "Admin ID",
-                        "type": "string"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Admin object",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/Admin"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Admin updated successfully"
-                    },
-                    "404": {
-                        "description": "Admin not found"
-                    },
-                    "500": {
-                        "description": "Server error"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Delete admin by ID",
-                "description": "Remove admin by ID.",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "description": "Admin ID",
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Admin deleted"
-                    },
-                    "404": {
-                        "description": "Admin not found"
-                    }
-                }
+            "400": {
+              "description": "User already exists"
             }
-        },
-        "/users/register": {
-            "post": {
-                "tags": [
-                    "User"
-                ],
-                "summary": "Register a new user",
-                "description": "Allows registering a new user account.",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "User object",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/User"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "User created successfully"
-                    },
-                    "500": {
-                        "description": "Server error"
-                    }
-                }
-            }
-        },
-        "/users/login": {
-            "post": {
-                "tags": [
-                    "User"
-                ],
-                "summary": "User login",
-                "description": "Authenticate user with email and password.",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Login credentials",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "email": {
-                                    "type": "string"
-                                },
-                                "password": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Login successful"
-                    },
-                    "400": {
-                        "description": "Invalid credentials"
-                    },
-                    "404": {
-                        "description": "User not found"
-                    }
-                }
-            }
-        },
-        "/users": {
-            "get": {
-                "tags": [
-                    "User"
-                ],
-                "summary": "Get all users",
-                "description": "Retrieve a list of all registered users.",
-                "responses": {
-                    "200": {
-                        "description": "List of users"
-                    },
-                    "500": {
-                        "description": "Server error"
-                    }
-                }
-            }
-        },
-        "/users/{id}": {
-            "get": {
-                "tags": [
-                    "User"
-                ],
-                "summary": "Get user by ID",
-                "description": "Retrieve user details by ID.",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "description": "User ID",
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "User details"
-                    },
-                    "404": {
-                        "description": "User not found"
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "User"
-                ],
-                "summary": "Update user by ID",
-                "description": "Modify user details by ID.",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "description": "User ID",
-                        "type": "string"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "User object",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/User"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "User updated successfully"
-                    },
-                    "404": {
-                        "description": "User not found"
-                    },
-                    "500": {
-                        "description": "Server error"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "User"
-                ],
-                "summary": "Delete user by ID",
-                "description": "Remove user by ID.",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "description": "User ID",
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "User deleted"
-                    },
-                    "404": {
-                        "description": "User not found"
-                    }
-                }
-            }
+          }
         }
-    },
-    "definitions": {
-        "Admin": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "notification_email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "name",
-                "email",
-                "notification_email",
-                "password"
-            ]
-        },
-        "User": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "profile_picture": {
-                    "type": "string"
-                },
-                "bio": {
-                    "type": "string"
-                },
-                "fav_Country": {
-                    "type": "string"
-                },
-                "preferences": {
+      },
+      "/users": {
+        "get": {
+          "summary": "Get All Users",
+          "operationId": "getUsers",
+          "responses": {
+            "200": {
+              "description": "List of all users",
+              "content": {
+                "application/json": {
+                  "schema": {
                     "type": "array",
                     "items": {
-                        "type": "string",
-                        "enum": [
-                            "history",
-                            "food"
-                        ]
+                      "$ref": "#/components/schemas/User"
                     }
+                  }
                 }
+              }
             },
-            "required": [
-                "name",
-                "username",
-                "email",
-                "password"
-            ]
+            "500": {
+              "description": "Error fetching users"
+            }
+          }
         }
+      },
+      "/users/{userId}": {
+        "put": {
+          "summary": "Update a User",
+          "operationId": "updateUser",
+          "parameters": [
+            {
+              "name": "userId",
+              "in": "path",
+              "required": true,
+              "description": "ID of the user to update",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "User updated successfully",
+              "content": {
+                "application/json": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "404": {
+              "description": "User not found"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete a User",
+          "operationId": "deleteUser",
+          "parameters": [
+            {
+              "name": "userId",
+              "in": "path",
+              "required": true,
+              "description": "ID of the user to delete",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "User deleted successfully"
+            },
+            "404": {
+              "description": "User not found"
+            }
+          }
+        }
+      },
+      "/admins/register": {
+        "post": {
+          "summary": "Register an Admin",
+          "operationId": "registerAdmin",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" },
+                    "email": { "type": "string" },
+                    "password": { "type": "string" }
+                  },
+                  "required": ["name", "email", "password"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Admin registered successfully"
+            },
+            "400": {
+              "description": "Admin already exists"
+            }
+          }
+        }
+      },
+      "/admins": {
+        "get": {
+          "summary": "Get All Admins",
+          "operationId": "getAdmins",
+          "responses": {
+            "200": {
+              "description": "List of all admins",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Admin"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/admins/{adminId}": {
+        "put": {
+          "summary": "Update an Admin",
+          "operationId": "updateAdmin",
+          "parameters": [
+            {
+              "name": "adminId",
+              "in": "path",
+              "required": true,
+              "description": "ID of the admin to update",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Admin"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Admin updated successfully",
+              "content": {
+                "application/json": {
+                  "$ref": "#/components/schemas/Admin"
+                }
+              }
+            },
+            "404": {
+              "description": "Admin not found"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete an Admin",
+          "operationId": "deleteAdmin",
+          "parameters": [
+            {
+              "name": "adminId",
+              "in": "path",
+              "required": true,
+              "description": "ID of the admin to delete",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Admin deleted successfully"
+            },
+            "404": {
+              "description": "Admin not found"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "User": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "username": { "type": "string" },
+            "country": { "type": "string" },
+            "email": { "type": "string" },
+            "password": { "type": "string" },
+            "profile_picture": { "type": "string" },
+            "bio": { "type": "string" },
+            "role": {
+              "type": "string",
+              "enum": ["content_creator", "visitor"]
+            },
+            "registration_date": { "type": "string", "format": "date-time" },
+            "fav_Country": { "type": "string" },
+            "preferences": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "required": ["name", "username", "email", "password"]
+        },
+        "Admin": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string" },
+            "password": { "type": "string" }
+          },
+          "required": ["name", "email", "password"]
+        }
+      }
     }
-}
+  }
+  
