@@ -1,62 +1,115 @@
+require('dotenv').config();
 const Admin = require('../models/admin');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const sendOTPEmail = require('../utils/sendEmail');  // Import the utility
+const nodemailer = require('nodemailer');
+const sendOTPEmail = require('../utils/sendEmail');
 
 // Register Admin
 exports.registerAdmin = async (req, res) => {
     const { name, email, password } = req.body;
+    
     try {
-        const adminExists = await Admin.findOne({ email });
-        if (adminExists) return res.status(400).json({ message: 'Admin already exists' });
+        console.log('Received admin registration data:', { name, email, password });
 
-        // Generate OTP
-        const otp = crypto.randomInt(100000, 999999).toString(); // 6-digit OTP
-        const otpExpiry = Date.now() + 300000;  // OTP valid for 5 minutes
+        // Check if the admin already exists
+        const existingAdmin = await Admin.findOne({ email });
+        if (existingAdmin) {
+            return res.status(400).json({ message: 'Admin already exists' });
+        }
 
-        // Store OTP and its expiration in the admin document for later validation
-        const admin = new Admin({ name, email, password, otp, otpExpiry });
+        // Generate OTP (6 digit random number)
+        const otp = crypto.randomInt(100000, 999999).toString();
+        console.log('Generated OTP:', otp);
+
+        // Store OTP in the admin record, along with OTP expiry time (valid for 10 minutes)
+        const otpExpiry = Date.now() + 10 * 60 * 1000;  // OTP valid for 10 minutes
+        const admin = new Admin({
+            name,
+            email,
+            password,
+            otp,
+            otpExpiry
+        });
+
+        // Save admin details along with OTP to the database
         await admin.save();
+        
+        // Create the transporter using environment variables
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',  // You can use 'gmail' or any other provider.
+            auth: {
+                user: process.env.EMAIL_USER,  // From .env
+                pass: process.env.EMAIL_PASS,  // From .env
+            },
+        });
 
-        // Send OTP to admin's email
-        await sendOTPEmail(email, otp);
+        const mailOptions = {
+            from: process.env.EMAIL_USER,  // From .env
+            to: email,
+            subject: 'Admin Registration OTP',
+            text: `Your OTP code for registering as an admin is: ${otp}`,
+        };
 
-        res.status(200).json({ message: 'OTP sent to email, please verify it' });
+        // Send the OTP email
+        transporter.sendMail(mailOptions, (err, info) => {
+            if (err) {
+                console.error('Error sending OTP email:', err);
+                return res.status(500).json({ message: 'Failed to send OTP email' });
+            } else {
+                console.log('OTP email sent:', info.response);
+                return res.status(200).json({ message: 'OTP sent to email, please verify it' });
+            }
+        });
+        
     } catch (error) {
-        res.status(500).json({ message: 'Error registering admin', error });
+        console.error('Error during registration:', error);
+        res.status(500).json({ message: 'Error during admin registration', error: error.message });
     }
 };
 
 // Verify OTP
 exports.verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
-
     try {
-        const admin = await Admin.findOne({ email });
-        if (!admin) return res.status(404).json({ message: 'Admin not found' });
+        console.log('Verifying OTP with the following details:', { email, otp });
 
+        const admin = await Admin.findOne({ email });
+        if (!admin) {
+            console.log(`Admin with email ${email} not found.`);
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+
+        console.log(`Stored OTP: ${admin.otp}, Provided OTP: ${otp}`);
+
+        // Verify OTP
         if (admin.otp !== otp) {
+            console.log('OTP does not match.');
             return res.status(400).json({ message: 'Invalid OTP' });
         }
 
-        // Check OTP expiration
-        if (Date.now() > admin.otpExpiry) {
+        // Check if OTP has expired
+        const currentTime = Date.now();
+        if (currentTime > admin.otpExpiry + 60000) {  // 1-minute margin
+            console.log('OTP has expired.');
             return res.status(400).json({ message: 'OTP expired' });
         }
 
-        // Hash password and complete registration
+        // OTP is valid, clear OTP fields and hash password
         const hashedPassword = await bcrypt.hash(admin.password, 10);
         admin.password = hashedPassword;
-        admin.otp = undefined;  // OTP used, now clear it
-        admin.otpExpiry = undefined;  // OTP expiration cleared
+        admin.otp = undefined;  // Clear OTP
+        admin.otpExpiry = undefined;  // Clear OTP expiry
 
         await admin.save();
-        res.status(201).json({ message: 'Admin successfully registered' });
+        console.log('OTP verified successfully. Admin registered:', admin);
+        res.status(200).json({ message: 'Admin successfully registered' });
+
     } catch (error) {
-        res.status(500).json({ message: 'Error verifying OTP', error });
+        console.error('Error verifying OTP:', error);
+        res.status(500).json({ message: 'Error verifying OTP', error: error.message });
     }
 };
-
 
 // Get All Admins
 exports.getAdmins = async (req, res) => {
