@@ -68,6 +68,35 @@ exports.getAdmins = async (req, res) => {
     }
 };
 
+// Login Admin
+exports.loginAdmin = async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const admin = await Admin.findOne({ email });
+        if (!admin) return res.status(400).json({ message: 'Admin not found' });
+
+        const isMatch = await bcrypt.compare(password, admin.password);
+        if (!isMatch) return res.status(400).json({ message: 'Invalid password' });
+
+        // Generate JWT Token
+        const token = jwt.sign({ adminId: admin._id }, process.env.JWT_SECRET, {
+            expiresIn: '1h',  // Token expires in 1 hour
+        });
+
+        res.status(200).json({
+            message: 'Admin logged in successfully',
+            token,
+            admin: {
+                id: admin._id,
+                name: admin.name,
+                email: admin.email,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error logging in admin', error });
+    }
+};
+
 // Update Admin
 exports.updateAdmin = async (req, res) => {
     const { adminId } = req.params;
