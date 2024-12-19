@@ -10,10 +10,10 @@ const jwt = require('jsonwebtoken');
 
 // Register Admin
 exports.registerAdmin = async (req, res) => {
-    const { name, email, password } = req.body;
-    
+    const { name, email, password, profile_photo } = req.body;
+
     try {
-        console.log('Received admin registration data:', { name, email, password });
+        console.log('Received admin registration data:', { name, email, password, profile_photo });
 
         // Check if the admin already exists
         const existingAdmin = await Admin.findOne({ email });
@@ -31,13 +31,14 @@ exports.registerAdmin = async (req, res) => {
             name,
             email,
             password,
+            profile_photo,
             otp,
-            otpExpiry
+            otpExpiry,
         });
 
         // Save admin details along with OTP to the database
         await admin.save();
-        
+
         // Create the transporter using environment variables
         const transporter = nodemailer.createTransport({
             service: 'gmail',  // You can use 'gmail' or any other provider.
@@ -64,7 +65,7 @@ exports.registerAdmin = async (req, res) => {
                 return res.status(200).json({ message: 'OTP sent to email, please verify it' });
             }
         });
-        
+
     } catch (error) {
         console.error('Error during registration:', error);
         res.status(500).json({ message: 'Error during admin registration', error: error.message });
@@ -146,6 +147,7 @@ exports.loginAdmin = async (req, res) => {
                 id: admin._id,
                 name: admin.name,
                 email: admin.email,
+                profile_photo: admin.profile_photo, // Include profile_photo
             },
         });
     } catch (error) {
@@ -156,11 +158,16 @@ exports.loginAdmin = async (req, res) => {
 // Update Admin
 exports.updateAdmin = async (req, res) => {
     const { adminId } = req.params;
-    const { name, email, password } = req.body;
+    const { name, email, password, profile_photo } = req.body;
 
     try {
         const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
-        const updateData = hashedPassword ? { name, email, password: hashedPassword } : { name, email };
+        const updateData = {
+            ...(name && { name }),
+            ...(email && { email }),
+            ...(hashedPassword && { password: hashedPassword }),
+            ...(profile_photo && { profile_photo }),
+        };
 
         const admin = await Admin.findByIdAndUpdate(adminId, updateData, { new: true });
         if (!admin) return res.status(404).json({ message: 'Admin not found' });
