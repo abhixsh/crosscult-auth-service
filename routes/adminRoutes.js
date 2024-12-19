@@ -12,6 +12,6 @@ router.post('/verify-otp', verifyOTP); // Add this route for OTP validation
 router.get('/', getAdmins);
 router.put('/:adminId', updateAdmin);
 router.delete('/:adminId', deleteAdmin);
-router.post('/login', loginAdmin);
+
 
 module.exports = router;
