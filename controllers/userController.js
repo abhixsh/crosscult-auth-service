@@ -85,3 +85,13 @@ exports.deleteUser = async (req, res) => {
         res.status(500).json({ message: 'Error deleting user', error });
     }
 };
+
+// Get Total Users Count
+exports.getUsersCount = async (req, res) => {
+    try {
+        const count = await User.countDocuments();
+        res.status(200).json({ totalUsers: count });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching user count', error });
+    }
+};
