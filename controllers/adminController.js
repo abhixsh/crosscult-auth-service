@@ -1,9 +1,12 @@
 require('dotenv').config();
+const express = require('express');
 const Admin = require('../models/admin');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const sendOTPEmail = require('../utils/sendEmail');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
 
 // Register Admin
 exports.registerAdmin = async (req, res) => {
