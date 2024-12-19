@@ -5,6 +5,7 @@ const { registerUser, getUsers, updateUser, deleteUser } = require('../controlle
 
 router.post('/register', registerUser);
 router.get('/', getUsers);
+router.post('/login', loginUser);
 router.put('/:userId', updateUser);
 router.delete('/:userId', deleteUser);
 
