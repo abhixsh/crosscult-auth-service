@@ -37,3 +37,16 @@ app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log('API Documentation available at http://localhost:${PORT}/api-docs');
 });
+
+app.get('/users/username/:username', async (req, res) => {
+  try {
+      const user = await User.findOne({ username: req.params.username });
+      if (!user) {
+          return res.status(404).json({ message: "User not found" });
+      }
+      res.status(200).json(user);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Error fetching user", error });
+  }
+});

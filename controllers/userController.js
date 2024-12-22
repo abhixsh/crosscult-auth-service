@@ -95,3 +95,18 @@ exports.getUsersCount = async (req, res) => {
         res.status(500).json({ message: 'Error fetching user count', error });
     }
 };
+
+// Function to get user by username
+exports.getUserByUsername = async (req, res) => {
+    const { username } = req.params; // Extract username from URL parameters
+
+    try {
+        const user = await User.findOne({ username }); // Find the user by username
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' }); // Return 404 if user not found
+        }
+        res.status(200).json(user); // Return the user data in the response
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching user', error }); // Handle errors properly
+    }
+};
