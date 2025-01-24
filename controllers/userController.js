@@ -29,7 +29,6 @@ exports.getUsers = async (req, res) => {
     }
 };
 
-// Login User
 exports.loginUser = async (req, res) => {
     const { email, password } = req.body;
 
@@ -39,21 +38,36 @@ exports.loginUser = async (req, res) => {
             return res.status(400).json({ message: 'User not found' });
         }
 
-        // Compare provided password with hashed password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        // Create and send JWT token
-        const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign(
+            {
+                id: user._id,
+                email: user.email
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
 
         res.status(200).json({
             message: 'Login successful',
             token,
+            user: {
+                name: user.name,
+                username: user.username,
+                country: user.country,
+                email: user.email,
+                profile_picture: user.profile_picture,
+                registration_date: user.registration_date,
+                fav_Country: user.fav_Country,
+                preferences: user.preferences
+            }
         });
     } catch (error) {
-        res.status(500).json({ message: 'Error logging in user', error });
+        res.status(500).json({ message: 'Error logging in user', error: error.message });
     }
 };
 
